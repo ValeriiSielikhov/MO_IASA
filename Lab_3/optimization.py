@@ -20,37 +20,44 @@ class OptimizationProblem(object):
         grads = np.array([self.first_order_der(arg, h, **dict(zip(list_of_args, x.get_np_array()))) for arg in list_of_args])
         return Point(**dict(zip(list_of_args, grads)))
 
-    def solution(self,x_0:Point, method:str= "const", alpha:float = 1, eps:float = 0.001):
+
+    def solution(self,x_0:Point, method:str= "const", alpha:float = 1, eps:float = 0.001, file:str = "cache.txt"):
         if method not in ["const", "divide"]:
             raise ValueError("This method is not applicable")
+        a = alpha
         h = self.find_grad(0.01, x_0)
-        x_1 = x_0 - alpha*h
-        x = self.constr.find_projection(x_1)
+        x = self.constr.find_projection(x_0 - alpha*h)
+        if method == "divide":
+            while self.func(*x.get_np_array()) > self.func(*x_0.get_np_array()):
+                a*=0.5
+                x = self.constr.find_projection(x_0 - a*h)
         diff = x - x_0
         dist = np.linalg.norm(diff.get_np_array())
+        m = 1
+        
+        with open(file, "a") as f:
+                f.write(f"Iteration:{m}\n")
+                f.write(f"Alpha:{a}\n")
+        
+        x.write_to_file(file)
 
-        e = 0.25
-        k,m = 1, 1
-#abs(dist)>=eps and 
-        #print(dist)
-        while dist>=eps and m<=50:
-            #print(vars(x), vars(x_0))
+        
+        while dist>=eps:
+            a = alpha
             x_0 = x
             h = self.find_grad(0.01, x_0)
-            x = self.constr.find_projection(x_0 - alpha*h)
-            #print(vars(x), vars(x_0))
+            x = self.constr.find_projection(x_0 - a*h)
             if method == "divide":
-                norm_h = np.linalg.norm(h.get_np_array())
-                #print(diff_func)
-                #print(-alpha*e*np.linalg.norm(h.get_np_array())**2)
-                while self.func(*x.get_np_array()) > self.func(*x_0.get_np_array())-alpha*e*(norm_h**2):
-                    alpha/=2
-                    x = self.constr.find_projection(x_0 - alpha*h)
-            print(alpha)
+                
+                while self.func(*x.get_np_array()) > self.func(*x_0.get_np_array()):
+                    a*=0.5
+                    x = self.constr.find_projection(x_0 - a*h)
+            
             diff = x - x_0
             dist = np.linalg.norm(diff.get_np_array())
             m+=1
-        return vars(x), np.linalg.norm(x.get_np_array()),self.func(*x_0.get_np_array()), m
-        #self.func(*vars(self.constr.find_projection(x)).values()), sum(self.constr.find_projection(x).get_np_array()**2)
-#print(vars(Point(x = 1, y = 2) - 5*Point(x = 1, y = 2)))
-print(OptimizationProblem(lambda x, y, z: x+y+z, Sphere(Point(x = 0, y = 0, z = 0), r = 1)).solution(Point(x = 2.5, y = -0.5, z = 0), method = "divide"))
+            with open(file, "a") as f:
+                f.write(f"Iteration:{m}\n")
+                f.write(f"Alpha:{a}\n")
+            x.write_to_file(file)
+        return x

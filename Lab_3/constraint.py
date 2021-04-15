@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-
+import matplotlib.pyplot as plt
 class Point:
 
     def __init__(self, **kwargs):
@@ -43,6 +43,11 @@ class Point:
     def get_coord_names(self):
         return np.array([elem for elem in vars(self).keys()])
 
+    def write_to_file(self, file, m = "a"):
+        with open(file, mode = m) as f:
+            for name in self.get_coord_names():
+                f.write(f"{name} = {round(vars(self).get(name), 5)} ")
+            f.write("\n")
 class Constraint(ABC):
 
     @abstractmethod
