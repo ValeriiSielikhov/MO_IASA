@@ -157,3 +157,35 @@ class Halfspace (Hyperplane):
         proj_coord = coord_x_val + max(0, (self.b - coord_p@coord_x_val))*coord_p/np.linalg.norm(coord_p)**2
 
         return Point(**dict(zip(coord_x_key, proj_coord)))
+
+class Ellipsoid(Sphere):
+
+    def __init__(self, center:Point, r:Point, a:np.array):
+        super().__init__(center, r)
+        self.a = a
+    
+    def coord_transform(self, func):
+        args_list = self.center.get_coord_names()
+        
+        def new_function(*args):
+    
+            return func(*[self.a[i]*args[i]+self.center.get_np_array()[i] for i in range(len(args_list))])
+        
+        self.center = Point(**dict(zip(args_list, np.zeros(len(args_list)))))
+
+        return new_function
+
+    def return_to_init_coords(self, point:Point):
+        
+        point_vals = point.get_np_array()
+
+        return Point().create_from_np_array(point_vals*self.a+self.center.get_np_array())
+    
+    def trace_return_to_init_coords(self, arr:np.array):
+        new_trace = np.array([])
+        for arrs in arr:
+            new_trace = np.concatenate((new_trace, arrs*self.a+self.center.get_np_array()), axis = 0)
+        return new_trace.reshape(len(arr), int(len(new_trace)/len(arr)))
+
+
+

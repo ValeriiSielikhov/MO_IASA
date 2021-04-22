@@ -25,7 +25,9 @@ class OptimizationProblem(object):
         self.traceroute = np.concatenate((self.traceroute, np.array([x.get_np_array()])), axis = 0)
 
     def solution(self,x_0:Point, method:str= "const", alpha:float = 1, eps:float = 0.001, file:str = "cache.txt"):
-        
+        with open(file, "w") as f:
+            pass
+
         self.traceroute = np.array([x_0.get_np_array()])
         if method not in ["const", "divide"]:
             raise ValueError("This method is not applicable")
