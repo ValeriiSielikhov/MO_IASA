@@ -114,6 +114,7 @@ def canonic_form_of_problem(initial_pr:dict):
                 eq["coefs"][eq["ind"].index(var)]*=-1
             
     add = len(vars)
+    
     #less equalities
     for eq in less:
         if eq["val"] or len(eq["ind"]) > 1:
@@ -186,7 +187,8 @@ def simplex_init(A:np.array, b:np.array, c:np.array, add:int):
     <c, x> -> min
     Ax = b; x >= 0; b>= 0;
     Returns:
-        first_table: np.array for the 
+        first_table: np.array for the initial table
+        bases: names for the bases
     '''
     first_table = A.copy()
     #first_table = np.append(first_table, np.flip(np.eye(1, A.shape[0]), 1), 1)
@@ -213,6 +215,8 @@ def simplex_step(table:np.array):
     Makes a step for the simplex method
     Params:
         table: the table for simplex method described in Takha
+    Returns:
+        table_new: modified table for the simplex method
     '''
     
     min_bases = np.argmin(table[0,])
@@ -234,17 +238,25 @@ def simplex_step(table:np.array):
         table_new[i, :] = table_new[i, :] - table_new[pivot_row, :]*table_new[i, min_bases]
     return table_new
 
-def simplex_method(table:np.array, base):
+def simplex_method(table:np.array, bases):
+
     '''
     Solves the problem using simplex method
     Params:
         table: the first table for simplex method described in Takha
+    Returns:
+        table_new: the final table for the simplex method
+        res: solution for the maximization problem
     '''
     table_new = simplex_step(table)
     k = 1
-    while(sum(sum(np.where(table_new[0, :]<0)))):
+    while(sum(sum(np.where(table_new[0, :]<0))) and k<1000):
         table_new = simplex_step(table_new)
-    
+        k+=1
+    else:
+        if k==1000:
+            raise ArithmeticError("The problem has no optimal solution!")
+
     res = {"z": table_new[0, -1]}
     ind = [base[0]=="x" for base in bases]
     x = bases[ind]
@@ -254,17 +266,3 @@ def simplex_method(table:np.array, base):
         else:
             res[x[i]] = 0
     return table_new, res
-    
-d = convert_string_problem_into_arrays("200*x_1+250*x_2+100*x_3", 
-                                        [], 
-                                        ["1*x_1+1*x_2+1*x_3 <=300",
-                                        "30*x_1+40*x_2+50*x_3 <=6400",
-                                        "1*x_1+1*x_2+2*x_3<=200"], 
-                                        [], 
-                                        )
-
-A, b, c, add = canonic_form_of_problem(d)
-table, bases = simplex_init(A, b, c, add)
-print(bases)
-print(table)
-print(simplex_method(table, bases))
