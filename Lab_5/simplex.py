@@ -1,5 +1,6 @@
 import numpy as np
 import re
+import pandas as pd
 
 def _convert_string_coefs_into_array(func:str):
     _coefs_func = re.findall(r"[+-]*\d+\*", func)
@@ -208,6 +209,23 @@ def simplex_init(A:np.array, b:np.array, c:np.array, add:int):
     bases.extend([f"s_{i+1}" for i in range(add)])
     bases.append("sol")
 
+    #determing the first base
+    first_base = []
+    index_base = []
+    for i in range(A.shape[1]):
+        if sum(A[:,i])==1 and set(A[:, i]) == set([1, 0]):
+            first_base.append(i)
+            index_base.append(np.where(A[:,i] == 1)[0])
+            if (len(first_base) > A.shape[0]):
+                break
+    
+    if len(first_base) < A.shape[0]:
+        raise ArithmeticError(f"You have only {len(first_base)} bases only! This problem should be transformed first!")
+    base_elements = c[first_base]
+    print(index_base)
+    for i, base in enumerate(base_elements):
+        first_table[0, ] = first_table[0, ] - base*first_table[index_base[i]+1, ]
+
     return first_table, np.array(bases)
 
 def simplex_step(table:np.array):
@@ -220,14 +238,12 @@ def simplex_step(table:np.array):
     '''
     
     min_bases = np.argmin(table[0,])
-    
     pivot_column = table[:, min_bases]
     last_column = table[:, -1]
 
-    column_check = np.divide(last_column, pivot_column)
+    column_check = np.divide(last_column[1:], pivot_column[1:])
     column_check[column_check <= 0] = np.inf
-    pivot_row = np.argmin(column_check)
-
+    pivot_row = np.argmin(column_check)+1
     pivot_elem = table[pivot_row, min_bases]
     table_new = table.copy()
     table_new[pivot_row, :]/=pivot_elem
@@ -236,6 +252,7 @@ def simplex_step(table:np.array):
         if i == pivot_row:
             continue
         table_new[i, :] = table_new[i, :] - table_new[pivot_row, :]*table_new[i, min_bases]
+
     return table_new
 
 def simplex_method(table:np.array, bases):
@@ -250,11 +267,15 @@ def simplex_method(table:np.array, bases):
     '''
     table_new = simplex_step(table)
     k = 1
-    while(sum(sum(np.where(table_new[0, :]<0))) and k<1000):
+    print("Iteration: 1")
+    print(pd.DataFrame(table_new, columns = bases))
+    while(sum(sum(np.where(table_new[0, :-1]<0))) and k<=table_new.shape[0]):
         table_new = simplex_step(table_new)
+        print(f"Iteration: {k+1}")
+        print(pd.DataFrame(table_new, columns = bases))
         k+=1
     else:
-        if k==1000:
+        if k>table_new.shape[0]:
             raise ArithmeticError("The problem has no optimal solution!")
 
     res = {"z": table_new[0, -1]}
