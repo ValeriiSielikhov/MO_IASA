@@ -237,7 +237,7 @@ def simplex_step(table:np.array):
         table_new: modified table for the simplex method
     '''
     
-    min_bases = np.argmin(table[0,])
+    min_bases = np.argmin(table[0, :-1])
     pivot_column = table[:, min_bases]
     last_column = table[:, -1]
 
